@@ -35,10 +35,12 @@ function AuthPage({ onAuthSuccess }) {
   };
 
   return (
-    <main className="page-center">
+    <main className="auth-layout">
+      <div className="bg-blob blob-auth-left" />
+      <div className="bg-blob blob-auth-right" />
       <AuthForm onLogin={handleLogin} onSignup={handleSignup} loading={loading} />
-      {message ? <p className="message success">{message}</p> : null}
-      {error ? <p className="message error">{error}</p> : null}
+      {message ? <p className="toast success">{message}</p> : null}
+      {error ? <p className="toast error">{error}</p> : null}
     </main>
   );
 }

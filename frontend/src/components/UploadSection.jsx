@@ -2,6 +2,7 @@ import { useState } from "react";
 
 function UploadSection({ onUpload, loading }) {
   const [selectedFile, setSelectedFile] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -13,21 +14,58 @@ function UploadSection({ onUpload, loading }) {
     event.target.reset();
   };
 
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setDragActive(false);
+    const file = event.dataTransfer.files?.[0] || null;
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    setDragActive(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragActive(false);
+  };
+
   return (
-    <form className="card section-card upload-card" onSubmit={handleSubmit}>
-      <h2>Upload File</h2>
-      <p className="section-note">☁️ Stored in AWS S3</p>
-      <label className="upload-zone">
-        <span className="upload-icon">↑</span>
-        <span>{selectedFile ? selectedFile.name : "Choose file from your device"}</span>
+    <form className="upload-card fade-in" onSubmit={handleSubmit}>
+      <div className="section-head">
+        <h2>Upload</h2>
+        <span className="s3-badge">☁️ Connected to AWS S3</span>
+      </div>
+
+      <label
+        className={`upload-dropzone ${dragActive ? "active" : ""}`}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+      >
+        <span className="upload-center-icon">⬆</span>
+        <span className="upload-title">Drag & Drop or Click to Upload</span>
+        <span className="upload-filename">
+          {selectedFile ? selectedFile.name : "No file selected yet"}
+        </span>
         <input
           type="file"
           onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
           required
         />
       </label>
-      <button className="btn btn-primary" type="submit" disabled={loading || !selectedFile}>
-        {loading ? "Uploading..." : "Upload to Cloud"}
+
+      <button className="btn-gradient" type="submit" disabled={loading || !selectedFile}>
+        {loading ? (
+          <span className="inline-center">
+            <span className="spinner" />
+            Uploading...
+          </span>
+        ) : (
+          "Upload to Cloud"
+        )}
       </button>
     </form>
   );

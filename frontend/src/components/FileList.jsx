@@ -1,20 +1,25 @@
 function FileList({ files, onRefresh, loading, getDownloadUrl }) {
   return (
-    <div className="card section-card files-card">
-      <div className="section-header">
+    <section className="files-section fade-in">
+      <div className="section-head">
         <h2>Your Files</h2>
-        <button className="btn btn-secondary" type="button" onClick={onRefresh} disabled={loading}>
+        <button className="btn-outline" type="button" onClick={onRefresh} disabled={loading}>
           {loading ? "Refreshing..." : "Refresh"}
         </button>
       </div>
 
       {files.length === 0 ? (
-        <p className="empty-state">No files uploaded yet.</p>
+        <div className="empty-state">
+          <div className="empty-icon" aria-hidden="true">
+            🚀
+          </div>
+          <p>No files yet 🚀</p>
+        </div>
       ) : (
         <ul className="file-list">
           {files.map((fileItem) => (
             <li key={`${fileItem.filename}-${fileItem.upload_time}`} className="file-item">
-              <div className="file-icon" aria-hidden="true">
+              <div className="file-icon-dark" aria-hidden="true">
                 📁
               </div>
               <div className="file-main">
@@ -24,18 +29,18 @@ function FileList({ files, onRefresh, loading, getDownloadUrl }) {
                 </p>
               </div>
               <a
-                className="btn btn-primary"
+                className="btn-gradient btn-download"
                 href={getDownloadUrl(fileItem.filename)}
                 target="_blank"
                 rel="noreferrer"
               >
-                ⬇ Download
+                Download
               </a>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </section>
   );
 }
 

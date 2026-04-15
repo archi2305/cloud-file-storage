@@ -14,17 +14,16 @@ function AuthForm({ onLogin, onSignup, loading }) {
   };
 
   return (
-    <form className="card auth-card" onSubmit={submitLogin}>
-      <div className="auth-logo" aria-hidden="true">
-        ☁
-      </div>
-      <h1>Cloud File Storage</h1>
-      <p className="subtitle">Login or create an account to continue.</p>
+    <form className="auth-card fade-in" onSubmit={submitLogin}>
+      <div className="auth-logo" aria-hidden="true">☁</div>
+      <h1>Cloud Storage</h1>
+      <p className="subtitle">Securely manage files in AWS S3.</p>
 
-      <label className="field-label" htmlFor="email">
+      <label className="auth-label" htmlFor="email">
         Email
       </label>
       <input
+        className="auth-input"
         id="email"
         type="email"
         value={email}
@@ -33,10 +32,11 @@ function AuthForm({ onLogin, onSignup, loading }) {
         required
       />
 
-      <label className="field-label" htmlFor="password">
+      <label className="auth-label" htmlFor="password">
         Password
       </label>
       <input
+        className="auth-input"
         id="password"
         type="password"
         value={password}
@@ -45,12 +45,12 @@ function AuthForm({ onLogin, onSignup, loading }) {
         required
       />
 
-      <div className="button-row">
-        <button className="btn btn-primary" type="submit" disabled={loading}>
+      <div className="auth-buttons">
+        <button className="btn-gradient" type="submit" disabled={loading}>
           {loading ? "Please wait..." : "Login"}
         </button>
         <button
-          className="btn btn-secondary"
+          className="btn-outline"
           type="button"
           onClick={submitSignup}
           disabled={loading}
