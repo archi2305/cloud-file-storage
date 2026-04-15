@@ -16,7 +16,7 @@ function UploadSection({ onUpload, loading }) {
   return (
     <form className="card section-card upload-card" onSubmit={handleSubmit}>
       <h2>Upload File</h2>
-      <p className="section-note">Select a file and upload it to your secure storage.</p>
+      <p className="section-note">☁️ Stored in AWS S3</p>
       <label className="upload-zone">
         <span className="upload-icon">↑</span>
         <span>{selectedFile ? selectedFile.name : "Choose file from your device"}</span>
@@ -27,7 +27,7 @@ function UploadSection({ onUpload, loading }) {
         />
       </label>
       <button className="btn btn-primary" type="submit" disabled={loading || !selectedFile}>
-        {loading ? "Uploading..." : "Upload File"}
+        {loading ? "Uploading..." : "Upload to Cloud"}
       </button>
     </form>
   );

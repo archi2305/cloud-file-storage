@@ -133,3 +133,33 @@ def get_file(filename: str) -> str:
         raise StorageError("Failed to generate S3 download URL") from exc
     except BotoCoreError as exc:
         raise StorageError("Failed to generate S3 download URL") from exc
+
+
+def generate_presigned_upload(filename: str, content_type: str) -> tuple[str, str]:
+    """
+    Generate a pre-signed PUT URL and unique file key for direct S3 upload.
+    """
+    if not _use_s3():
+        raise StorageError("Direct S3 upload requires AWS configuration")
+
+    _, bucket = _get_s3_config()
+    s3_client = _get_s3_client()
+
+    original_name = filename or "uploaded-file"
+    extension = original_name.rsplit(".", 1)
+    extension = f".{extension[1]}" if len(extension) == 2 else ""
+    file_key = f"{uuid.uuid4().hex}{extension}"
+
+    try:
+        upload_url = s3_client.generate_presigned_url(
+            "put_object",
+            Params={
+                "Bucket": bucket,
+                "Key": file_key,
+                "ContentType": content_type or "application/octet-stream",
+            },
+            ExpiresIn=3600,
+        )
+        return upload_url, file_key
+    except (ClientError, BotoCoreError) as exc:
+        raise StorageError("Failed to generate S3 upload URL") from exc

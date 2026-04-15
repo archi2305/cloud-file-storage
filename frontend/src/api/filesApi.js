@@ -53,6 +53,25 @@ export const uploadFile = async (email, file) => {
   return response.data;
 };
 
+export const generateUploadUrl = async ({ filename, contentType }) => {
+  const response = await apiClient.get("/generate-upload-url", {
+    params: {
+      filename,
+      content_type: contentType || "application/octet-stream",
+    },
+  });
+  return response.data;
+};
+
+export const saveFile = async ({ filename, fileKey, email }) => {
+  const response = await apiClient.post("/save-file", {
+    filename,
+    file_key: fileKey,
+    email: normalizeEmail(email),
+  });
+  return response.data;
+};
+
 export const fetchFiles = async (email) => {
   const response = await apiClient.get("/files", {
     params: { email: normalizeEmail(email) },

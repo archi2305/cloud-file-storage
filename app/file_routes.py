@@ -6,7 +6,13 @@ from sqlalchemy.orm import Session
 
 from . import models, schemas
 from .database import get_db
-from .storage import StorageError, StorageNotFoundError, get_file, save_file
+from .storage import (
+    StorageError,
+    StorageNotFoundError,
+    generate_presigned_upload,
+    get_file,
+    save_file,
+)
 
 router = APIRouter()
 
@@ -46,6 +52,57 @@ def upload_file(
     db.commit()
 
     return {"message": "File uploaded successfully"}
+
+
+@router.get("/generate-upload-url", response_model=schemas.UploadUrlResponse)
+def generate_upload_url(filename: str, content_type: str):
+    """
+    Generate a pre-signed S3 PUT URL so frontend can upload directly to S3.
+    """
+    if not filename.strip():
+        raise HTTPException(status_code=400, detail="Filename is required")
+
+    try:
+        upload_url, file_key = generate_presigned_upload(
+            filename=filename,
+            content_type=content_type,
+        )
+        return {"upload_url": upload_url, "file_key": file_key}
+    except StorageError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/save-file", response_model=schemas.MessageResponse)
+def save_file_metadata(payload: schemas.SaveFileRequest, db: Session = Depends(get_db)):
+    """
+    Save uploaded file metadata after direct S3 upload succeeds.
+    """
+    filename = payload.filename.strip()
+    email = payload.email.strip().lower()
+    file_key = payload.file_key.strip()
+
+    if not filename or not email or not file_key:
+        raise HTTPException(status_code=400, detail="filename, file_key, and email are required")
+
+    duplicate = (
+        db.query(models.FileRecord)
+        .filter(
+            models.FileRecord.filename == filename,
+            models.FileRecord.owner == email,
+        )
+        .first()
+    )
+    if duplicate:
+        raise HTTPException(status_code=409, detail="A file with this name already exists")
+
+    new_file = models.FileRecord(
+        filename=filename,
+        owner=email,
+        stored_filename=file_key,
+    )
+    db.add(new_file)
+    db.commit()
+    return {"message": "File metadata saved successfully"}
 
 
 @router.get("/files", response_model=List[schemas.FileItem])

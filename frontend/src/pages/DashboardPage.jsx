@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import FileList from "../components/FileList";
 import UploadSection from "../components/UploadSection";
-import { fetchFiles, getDownloadUrl, uploadFile } from "../api/filesApi";
+import { fetchFiles, generateUploadUrl, getDownloadUrl, saveFile } from "../api/filesApi";
 
 function DashboardPage({ email, onLogout }) {
   const [files, setFiles] = useState([]);
@@ -33,11 +33,33 @@ function DashboardPage({ email, onLogout }) {
     setMessage("");
     setError("");
     try {
-      await uploadFile(email, file);
-      setMessage("File uploaded successfully.");
+      const { upload_url: uploadUrl, file_key: fileKey } = await generateUploadUrl({
+        filename: file.name,
+        contentType: file.type || "application/octet-stream",
+      });
+
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+        },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Direct upload to S3 failed.");
+      }
+
+      await saveFile({
+        filename: file.name,
+        fileKey: fileKey,
+        email,
+      });
+
+      setMessage("File uploaded to AWS S3 successfully");
       await loadFiles();
     } catch (err) {
-      setError(err.response?.data?.detail || "File upload failed.");
+      setError(err.response?.data?.detail || err.message || "File upload failed.");
     } finally {
       setUploading(false);
     }
@@ -49,6 +71,7 @@ function DashboardPage({ email, onLogout }) {
         <div className="header-brand">
           <h1>Cloud File Storage</h1>
           <p className="subtitle">Secure file dashboard</p>
+          <p className="cloud-indicator">☁️ Stored in AWS S3</p>
         </div>
         <div className="header-actions">
           <span className="user-badge">{email}</span>
