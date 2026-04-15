@@ -1,12 +1,12 @@
 from typing import List
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from . import models, schemas
 from .database import get_db
-from .storage import get_file, save_file
+from .storage import StorageError, StorageNotFoundError, get_file, save_file
 
 router = APIRouter()
 
@@ -29,7 +29,10 @@ def upload_file(
     if duplicate:
         raise HTTPException(status_code=409, detail="A file with this name already exists")
 
-    stored_filename = save_file(file)
+    try:
+        stored_filename = save_file(file)
+    except StorageError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     new_file = models.FileRecord(
         filename=file.filename,
@@ -64,8 +67,12 @@ def download_file(filename: str, db: Session = Depends(get_db)):
     if not file_record:
         raise HTTPException(status_code=404, detail="File metadata not found")
 
-    file_path = get_file(file_record.stored_filename)
-    if not file_path:
-        raise HTTPException(status_code=404, detail="File is missing on disk")
+    try:
+        download_url = get_file(file_record.stored_filename)
+    except StorageNotFoundError:
+        raise HTTPException(status_code=404, detail="File is missing in S3")
+    except StorageError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-    return FileResponse(path=file_path, filename=file_record.filename)
+    # Redirect the client to a temporary signed S3 URL for downloading.
+    return RedirectResponse(url=download_url)
