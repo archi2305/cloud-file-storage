@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import FileList from "../components/FileList";
 import UploadSection from "../components/UploadSection";
-import { fetchFiles, generateUploadUrl, getDownloadUrl, saveFile } from "../api/filesApi";
+import {
+  fetchFiles,
+  generateUploadUrl,
+  getDownloadUrl,
+  saveFile,
+  uploadFile,
+} from "../api/filesApi";
 
 function DashboardPage({ email, onLogout }) {
   const [files, setFiles] = useState([]);
@@ -38,13 +44,18 @@ function DashboardPage({ email, onLogout }) {
         contentType: file.type || "application/octet-stream",
       });
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       const uploadResponse = await fetch(uploadUrl, {
         method: "PUT",
         headers: {
           "Content-Type": file.type || "application/octet-stream",
         },
         body: file,
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!uploadResponse.ok) {
         throw new Error("Direct upload to S3 failed.");
@@ -59,7 +70,20 @@ function DashboardPage({ email, onLogout }) {
       setMessage("File uploaded to AWS S3 successfully");
       await loadFiles();
     } catch (err) {
-      setError(err.response?.data?.detail || err.message || "File upload failed.");
+      // Fallback path: if direct upload fails due to CORS/network policy,
+      // upload through backend to keep user flow working.
+      try {
+        await uploadFile(email, file);
+        setMessage("File uploaded successfully (fallback mode).");
+        await loadFiles();
+      } catch (fallbackErr) {
+        setError(
+          fallbackErr.response?.data?.detail ||
+            err.response?.data?.detail ||
+            err.message ||
+            "File upload failed."
+        );
+      }
     } finally {
       setUploading(false);
     }
