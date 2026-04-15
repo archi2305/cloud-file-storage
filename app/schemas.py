@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 
 class UserCreate(BaseModel):
@@ -16,4 +17,5 @@ class MessageResponse(BaseModel):
 
 class FileItem(BaseModel):
     filename: str
-    owner_email: str
+    owner: str
+    upload_time: datetime

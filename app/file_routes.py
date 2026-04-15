@@ -1,5 +1,3 @@
-import os
-import shutil
 from typing import List
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -8,9 +6,9 @@ from sqlalchemy.orm import Session
 
 from . import models, schemas
 from .database import get_db
+from .storage import get_file, save_file
 
 router = APIRouter()
-UPLOAD_FOLDER = "uploads"
 
 
 @router.post("/upload", response_model=schemas.MessageResponse)
@@ -20,25 +18,23 @@ def upload_file(
     db: Session = Depends(get_db),
 ):
     """
-    Upload a file for a specific user email and store metadata in SQLite.
+    Upload a file and store metadata in the database.
     """
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    # Keep API behavior simple: reject duplicate original file names.
+    duplicate = db.query(models.FileRecord).filter(models.FileRecord.filename == file.filename).first()
+    if duplicate:
+        raise HTTPException(status_code=409, detail="A file with this name already exists")
 
-    # Prefix user id to reduce filename collisions across users.
-    safe_filename = f"{user.id}_{file.filename}"
-    destination_path = os.path.join(UPLOAD_FOLDER, safe_filename)
+    stored_filename = save_file(file)
 
-    with open(destination_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    new_file = models.StoredFile(
+    new_file = models.FileRecord(
         filename=file.filename,
-        file_path=destination_path,
-        owner_id=user.id,
+        owner=user.email,
+        stored_filename=stored_filename,
     )
     db.add(new_file)
     db.commit()
@@ -55,8 +51,8 @@ def list_files(email: str, db: Session = Depends(get_db)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    files = db.query(models.StoredFile).filter(models.StoredFile.owner_id == user.id).all()
-    return [{"filename": item.filename, "owner_email": user.email} for item in files]
+    files = db.query(models.FileRecord).filter(models.FileRecord.owner == user.email).all()
+    return [{"filename": item.filename, "owner": item.owner, "upload_time": item.upload_time} for item in files]
 
 
 @router.get("/download/{filename}")
@@ -64,11 +60,12 @@ def download_file(filename: str, db: Session = Depends(get_db)):
     """
     Download a file by its original filename.
     """
-    file_record = db.query(models.StoredFile).filter(models.StoredFile.filename == filename).first()
+    file_record = db.query(models.FileRecord).filter(models.FileRecord.filename == filename).first()
     if not file_record:
         raise HTTPException(status_code=404, detail="File metadata not found")
 
-    if not os.path.exists(file_record.file_path):
+    file_path = get_file(file_record.stored_filename)
+    if not file_path:
         raise HTTPException(status_code=404, detail="File is missing on disk")
 
-    return FileResponse(path=file_record.file_path, filename=file_record.filename)
+    return FileResponse(path=file_path, filename=file_record.filename)
