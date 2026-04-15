@@ -20,8 +20,15 @@ def upload_file(
     """
     Upload a file and store metadata in the database.
     """
-    # Keep API behavior simple: reject duplicate original file names.
-    duplicate = db.query(models.FileRecord).filter(models.FileRecord.filename == file.filename).first()
+    # Reject duplicate file names for the same owner only.
+    duplicate = (
+        db.query(models.FileRecord)
+        .filter(
+            models.FileRecord.filename == file.filename,
+            models.FileRecord.owner == email,
+        )
+        .first()
+    )
     if duplicate:
         raise HTTPException(status_code=409, detail="A file with this name already exists")
 
