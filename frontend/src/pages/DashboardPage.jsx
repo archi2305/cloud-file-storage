@@ -47,8 +47,8 @@ function DashboardPage({ email, onLogout }) {
     <main className="page-center">
       <section className="card dashboard-header">
         <div>
-          <h1>Dashboard</h1>
-          <p className="subtitle">Logged in as {email}</p>
+          <h1>Cloud File Storage</h1>
+          <p className="subtitle">Welcome back, {email}</p>
         </div>
         <button className="btn btn-secondary" type="button" onClick={onLogout}>
           Logout

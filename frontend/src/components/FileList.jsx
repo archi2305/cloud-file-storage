@@ -14,7 +14,7 @@ function FileList({ files, onRefresh, loading, getDownloadUrl }) {
         <ul className="file-list">
           {files.map((fileItem) => (
             <li key={`${fileItem.filename}-${fileItem.upload_time}`} className="file-item">
-              <div>
+              <div className="file-main">
                 <p className="filename">{fileItem.filename}</p>
                 <p className="file-meta">
                   Uploaded: {new Date(fileItem.upload_time).toLocaleString()}
