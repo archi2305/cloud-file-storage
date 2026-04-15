@@ -1,4 +1,5 @@
 import uuid
+import os
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
@@ -17,6 +18,23 @@ class StorageNotFoundError(StorageError):
     """
     Raised when the requested object does not exist in S3.
     """
+
+
+UPLOAD_FOLDER = "uploads"
+
+
+def _use_s3() -> bool:
+    """
+    Use S3 only when all required AWS variables are configured.
+    """
+    return all(
+        [
+            config.AWS_ACCESS_KEY_ID,
+            config.AWS_SECRET_ACCESS_KEY,
+            config.AWS_REGION,
+            config.S3_BUCKET_NAME,
+        ]
+    )
 
 
 def _get_s3_config() -> tuple[str, str]:
@@ -53,16 +71,27 @@ def _get_s3_client():
 
 def save_file(file: UploadFile) -> str:
     """
-    Upload a file to S3 with a unique object key and return that key.
+    Save file and return stored filename/key.
+    - Uses S3 when AWS config is present.
+    - Falls back to local `uploads/` when AWS config is missing.
     """
-    _, bucket = _get_s3_config()
-    s3_client = _get_s3_client()
-
     # Keep original extension and add UUID prefix to avoid object key collisions.
     original_name = file.filename or "uploaded-file"
     extension = original_name.rsplit(".", 1)
     extension = f".{extension[1]}" if len(extension) == 2 else ""
     unique_key = f"{uuid.uuid4().hex}{extension}"
+
+    # Local fallback keeps the app usable during setup.
+    if not _use_s3():
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        destination_path = os.path.join(UPLOAD_FOLDER, unique_key)
+        file.file.seek(0)
+        with open(destination_path, "wb") as destination:
+            destination.write(file.file.read())
+        return unique_key
+
+    _, bucket = _get_s3_config()
+    s3_client = _get_s3_client()
 
     try:
         file.file.seek(0)
@@ -75,8 +104,16 @@ def save_file(file: UploadFile) -> str:
 
 def get_file(filename: str) -> str:
     """
-    Return a short-lived pre-signed download URL for an S3 object.
+    Return a retrievable file reference.
+    - S3 mode: returns pre-signed URL.
+    - Local mode: returns local file path.
     """
+    if not _use_s3():
+        local_path = os.path.join(UPLOAD_FOLDER, filename)
+        if not os.path.exists(local_path):
+            raise StorageNotFoundError("Requested file does not exist in local storage")
+        return local_path
+
     _, bucket = _get_s3_config()
     s3_client = _get_s3_client()
 

@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 from . import models, schemas
 from .database import get_db
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Use a stable built-in Passlib scheme to avoid bcrypt backend issues.
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 router = APIRouter()
 
 def hash_password(password: str):
