@@ -57,7 +57,7 @@ function UploadSection({ onUpload, loading }) {
         />
       </label>
 
-      <button className="btn-gradient" type="submit" disabled={loading || !selectedFile}>
+      <button className="btn-gradient btn-upload" type="submit" disabled={loading || !selectedFile}>
         {loading ? (
           <span className="inline-center">
             <span className="spinner" />
