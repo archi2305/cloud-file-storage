@@ -14,11 +14,11 @@ function UploadSection({ onUpload, loading }) {
   };
 
   return (
-    <form className="card section-card" onSubmit={handleSubmit}>
+    <form className="card section-card upload-card" onSubmit={handleSubmit}>
       <h2>Upload File</h2>
       <p className="section-note">Select a file and upload it to your secure storage.</p>
       <label className="upload-zone">
-        <span className="upload-icon">⬆</span>
+        <span className="upload-icon">↑</span>
         <span>{selectedFile ? selectedFile.name : "Choose file from your device"}</span>
         <input
           type="file"
