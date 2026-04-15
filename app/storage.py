@@ -4,12 +4,7 @@ import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import UploadFile
 
-# Required environment variables:
-# - AWS_ACCESS_KEY_ID
-# - AWS_SECRET_ACCESS_KEY
-# - AWS_REGION
-# - S3_BUCKET_NAME
-import os
+from . import config
 
 
 class StorageError(Exception):
@@ -26,10 +21,10 @@ class StorageNotFoundError(StorageError):
 
 def _get_s3_config() -> tuple[str, str]:
     """
-    Read and validate required AWS/S3 environment variables.
+    Read and validate required AWS/S3 configuration values.
     """
-    region = os.getenv("AWS_REGION")
-    bucket = os.getenv("S3_BUCKET_NAME")
+    region = config.AWS_REGION
+    bucket = config.S3_BUCKET_NAME
 
     if not region or not bucket:
         raise StorageError("Missing AWS_REGION or S3_BUCKET_NAME environment variable")
@@ -39,11 +34,21 @@ def _get_s3_config() -> tuple[str, str]:
 
 def _get_s3_client():
     """
-    Create an S3 client using environment-based AWS credentials.
-    boto3 automatically reads AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
+    Create an S3 client from config values.
     """
     region, _ = _get_s3_config()
-    return boto3.client("s3", region_name=region)
+
+    if not config.AWS_ACCESS_KEY_ID or not config.AWS_SECRET_ACCESS_KEY:
+        raise StorageError(
+            "Missing AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY environment variable"
+        )
+
+    return boto3.client(
+        "s3",
+        region_name=region,
+        aws_access_key_id=config.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY,
+    )
 
 
 def save_file(file: UploadFile) -> str:
@@ -54,7 +59,9 @@ def save_file(file: UploadFile) -> str:
     s3_client = _get_s3_client()
 
     # Keep original extension and add UUID prefix to avoid object key collisions.
-    extension = os.path.splitext(file.filename)[1]
+    original_name = file.filename or "uploaded-file"
+    extension = original_name.rsplit(".", 1)
+    extension = f".{extension[1]}" if len(extension) == 2 else ""
     unique_key = f"{uuid.uuid4().hex}{extension}"
 
     try:

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from . import auth, file_routes, models
+from . import auth, config, file_routes, models
 from .database import engine
 
 # Create database tables on startup.
