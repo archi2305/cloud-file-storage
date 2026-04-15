@@ -2,6 +2,7 @@ import uuid
 import os
 
 import boto3
+from botocore.client import Config
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import UploadFile
 
@@ -66,6 +67,12 @@ def _get_s3_client():
         region_name=region,
         aws_access_key_id=config.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY,
+        # Force v4 signing with virtual-hosted addressing.
+        # This keeps endpoint selection regional without manual endpoint_url.
+        config=Config(
+            signature_version="s3v4",
+            s3={"addressing_style": "virtual"},
+        ),
     )
 
 
@@ -152,7 +159,7 @@ def generate_presigned_upload(filename: str, content_type: str) -> tuple[str, st
 
     try:
         upload_url = s3_client.generate_presigned_url(
-            "put_object",
+            ClientMethod="put_object",
             Params={
                 "Bucket": bucket,
                 "Key": file_key,
