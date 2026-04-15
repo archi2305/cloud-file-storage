@@ -15,6 +15,7 @@ function AuthForm({ onLogin, onSignup, loading }) {
 
   return (
     <form className="card auth-card" onSubmit={submitLogin}>
+      <p className="eyebrow">Secure Workspace</p>
       <h1>Cloud File Storage</h1>
       <p className="subtitle">Login or create an account to continue.</p>
 
@@ -55,6 +56,7 @@ function AuthForm({ onLogin, onSignup, loading }) {
           {loading ? "Please wait..." : "Signup"}
         </button>
       </div>
+      <p className="auth-footnote">Your files are private and encrypted in transit.</p>
     </form>
   );
 }

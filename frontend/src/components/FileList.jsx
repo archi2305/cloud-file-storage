@@ -14,6 +14,9 @@ function FileList({ files, onRefresh, loading, getDownloadUrl }) {
         <ul className="file-list">
           {files.map((fileItem) => (
             <li key={`${fileItem.filename}-${fileItem.upload_time}`} className="file-item">
+              <div className="file-icon" aria-hidden="true">
+                📄
+              </div>
               <div className="file-main">
                 <p className="filename">{fileItem.filename}</p>
                 <p className="file-meta">
@@ -26,7 +29,7 @@ function FileList({ files, onRefresh, loading, getDownloadUrl }) {
                 target="_blank"
                 rel="noreferrer"
               >
-                Download
+                ⬇ Download
               </a>
             </li>
           ))}

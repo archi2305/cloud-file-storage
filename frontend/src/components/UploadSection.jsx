@@ -17,11 +17,15 @@ function UploadSection({ onUpload, loading }) {
     <form className="card section-card" onSubmit={handleSubmit}>
       <h2>Upload File</h2>
       <p className="section-note">Select a file and upload it to your secure storage.</p>
-      <input
-        type="file"
-        onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
-        required
-      />
+      <label className="upload-zone">
+        <span className="upload-icon">⬆</span>
+        <span>{selectedFile ? selectedFile.name : "Choose file from your device"}</span>
+        <input
+          type="file"
+          onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
+          required
+        />
+      </label>
       <button className="btn btn-primary" type="submit" disabled={loading || !selectedFile}>
         {loading ? "Uploading..." : "Upload File"}
       </button>

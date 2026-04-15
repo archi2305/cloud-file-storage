@@ -47,12 +47,24 @@ function DashboardPage({ email, onLogout }) {
     <main className="page-center">
       <section className="card dashboard-header">
         <div>
+          <p className="eyebrow">Workspace Overview</p>
           <h1>Cloud File Storage</h1>
           <p className="subtitle">Welcome back, {email}</p>
         </div>
         <button className="btn btn-secondary" type="button" onClick={onLogout}>
           Logout
         </button>
+      </section>
+
+      <section className="stats-grid">
+        <article className="card stat-card">
+          <p className="stat-label">Total Files</p>
+          <p className="stat-value">{files.length}</p>
+        </article>
+        <article className="card stat-card">
+          <p className="stat-label">Storage Mode</p>
+          <p className="stat-value stat-value-small">Hybrid Ready</p>
+        </article>
       </section>
 
       <UploadSection onUpload={handleUpload} loading={uploading} />
